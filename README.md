@@ -30,13 +30,13 @@ touch .env
     3. `from django.core.management.utils import get_random_secret_key`
     4. `print(get_random_secret_key())`
     5. Копируем строку в `.env` файл: `DJANGO_KEY='ваш ключ'`    
-    6. Для тестирования бота добавляем токен в `.env` файл: `BOT_TOKEN='токен вашего бота'`
+    6. Для тестирования бота добавляем токен в `.env` файл: `TELEGRAM_TOKEN='токен вашего бота'`
 
 * TELEGRAM_TOKEN
-Можно получить через BotFather
+    * Можно получить через BotFather
 
 * DEBUG
-Можно установить True или False
+    * Можно установить True или False
 
 ### 5. Переходим в директорию проекта и выполняем миграции в ДБ: 
 ```
