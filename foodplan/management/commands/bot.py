@@ -8,15 +8,24 @@ from telegram import InlineKeyboardButton, ReplyKeyboardMarkup, \
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
     CallbackQueryHandler
 
+from telegram_bot_pagination import InlineKeyboardPaginator
 
 
 BUTTON_MY_DISHES = "Мои блюда"
 BUTTON_CHOICE_DISH = "Выбрать блюдо"
+BUTTON_BACK = "Назад"
 
-BUTTON_RISE = "Рисовая каша"
-BUTTON_BREAD = "Хлеб"
-BUTTON_OMELETTE = "Амлет"
 
+added_dishes = [
+    "Вареники с творогом", 
+    "Тыквенный суп с беконом", 
+    "Праздничная свинина «Гармошка»", 
+    "Наггетсы из грудки на сковороде", 
+    "Куриная грудка с овощами на сковороде", 
+    "Минтай в кляре"
+]
+
+# добавить json с картинками и описанием блюд
 
 class Command(BaseCommand):
     help = 'Телеграм бот'
@@ -28,10 +37,16 @@ class Command(BaseCommand):
         dp.add_handler(CommandHandler("start", start_handler))
         dp.add_handler(
             CallbackQueryHandler(
+                callback=dishes_pages_callback,
+                pattern="^dishes" 
+            )
+        )
+        dp.add_handler(
+            CallbackQueryHandler(
                 callback=callback_dishes_handler,
                 pass_chat_data=True
             )
-        )
+        )        
         updater.start_polling()
 
 
@@ -41,7 +56,7 @@ def start_handler(update, context):
     message = "Ваш личный кабинет"
     context.bot.send_photo(
         chat_id=chat_id,
-        photo="https://cdn4.vectorstock.com/i/1000x1000/51/68/eat-vector-21865168.jpg"
+        photo="https://foodplan.ru/lp/img/phone-top-banner.jpeg"
     )
     context.bot.send_message(
         chat_id=chat_id,
@@ -55,10 +70,28 @@ def callback_dishes_handler(update, context):
     query = update.callback_query
     data = query.data
     if data == BUTTON_MY_DISHES:
-        reply_markup = get_dishes_keyboard()
+        paginator = InlineKeyboardPaginator(
+            len(added_dishes),
+            data_pattern="dishes#{page}"
+        )
+        paginator.add_after(
+            InlineKeyboardButton('Назад', callback_data=BUTTON_BACK)
+        )
         context.bot.send_message(
             chat_id=chat_id,
-            text="Блюда на сегодняшний день",
+            text=added_dishes[0],
+            reply_markup=paginator.markup,
+        )
+    if data == BUTTON_BACK:
+        reply_markup = get_user_keyboard()
+        message = "Ваш личный кабинет"
+        context.bot.send_photo(
+            chat_id=chat_id,
+            photo="https://foodplan.ru/lp/img/phone-top-banner.jpeg"
+        )
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=message,
             reply_markup=reply_markup
         )
     if data == BUTTON_CHOICE_DISH:
@@ -68,19 +101,28 @@ def callback_dishes_handler(update, context):
         )
 
 
+def dishes_pages_callback(update, context):
+    query = update.callback_query
+    query.answer()
+    page = int(query.data.split('#')[1])
+    paginator = InlineKeyboardPaginator(
+        len(added_dishes),
+        current_page=page,
+        data_pattern='dishes#{page}'
+    )
+    paginator.add_after(
+        InlineKeyboardButton('Назад', callback_data=BUTTON_BACK)
+    )
+    query.edit_message_text(
+        text=added_dishes[page - 1],
+        reply_markup=paginator.markup,
+    )
+
+
 def get_user_keyboard():
     keyboard=[
         [InlineKeyboardButton("Мои блюда", callback_data=BUTTON_MY_DISHES)],
         [InlineKeyboardButton("Добавить блюдо", callback_data=BUTTON_CHOICE_DISH)],
-    ]
-    return InlineKeyboardMarkup(keyboard)
-
-
-def get_dishes_keyboard():
-    keyboard=[
-        [InlineKeyboardButton("Амлет", callback_data=BUTTON_OMELETTE)],
-        [InlineKeyboardButton("Рисовая каша", callback_data=BUTTON_RISE)],
-        [InlineKeyboardButton("Ржаной хлеб", callback_data=BUTTON_BREAD)],
     ]
     return InlineKeyboardMarkup(keyboard)
 
