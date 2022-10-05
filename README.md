@@ -46,6 +46,7 @@ python manage.py makemigrations db; python manage.py migrate
 Выполнять этот шаг нужно при изменении models.py
 
 ### 6. Запускаем модуль бота:
+Сам модуль находится в директории foodplan/management/commands
 ```
 python manage.py bot
 ```
