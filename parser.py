@@ -41,7 +41,12 @@ def parse_recipe(url, pages, dish_type):
 			recipes["imgs_url"] = imgs_url[element]
 			recipes["calories"] = calories[element]
 		with open('recipes.json', 'w') as fp:
-			json.dump(recipes, fp)
+			json.dump(
+                recipes,
+                fp, 
+                ensure_ascii=False,
+                indent=4
+            )
 
 
 def main():
