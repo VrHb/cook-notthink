@@ -10,14 +10,6 @@ collections.Callable = collections.abc.Callable
 
 def parse_recipe(url, pages, dish_type):
 	recipes_list = []
-	recipes ={
-				  "dishtype": dish_type,	
-				  "title": "",
-				  "description": "",
-				  "ingredients": "",
-				  "imgs_url": "",
-				  "calories": "",
-		}
 	for page in range(1, pages+1):
 		recipes_url = f"{url}/{page}"
 		response = requests.get(recipes_url)
@@ -33,7 +25,16 @@ def parse_recipe(url, pages, dish_type):
 		imgs_url = [img["src"].replace("//", "") for img in imgs_url_soup]
 		calories_soup = soup.find_all("div", class_="energy tt")
 		calories = [amount.text for amount in calories_soup]
+		print(calories)
 		for element in range(len(titles)-1):
+			recipes ={
+				  "dishtype": dish_type,	
+				  "title": "",
+				  "description": "",
+				  "ingredients": "",
+				  "imgs_url": "",
+				  "calories": "",
+			}
 			recipes["dishtype"] = dish_type
 			recipes["title"] = titles[element]
 			recipes["description"] = descriptions[element]
@@ -41,8 +42,13 @@ def parse_recipe(url, pages, dish_type):
 			recipes["imgs_url"] = imgs_url[element]
 			recipes["calories"] = calories[element]
 			recipes_list.append(recipes)
-		with open('recipes.json', 'w') as fp:
-			json.dump(recipes_list, fp)
+	with open('recipes.json', 'a+') as fp:
+		json.dump(
+            recipes_list,
+            fp, 
+            ensure_ascii=False,
+            indent=4
+        )
 
 
 def main():
