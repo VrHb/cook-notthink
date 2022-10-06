@@ -11,7 +11,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
 from telegram_bot_pagination import InlineKeyboardPaginator
 
 
-AUTORIZATION, USER_LK, MY_DISHES = range(3)
+AUTORIZATION, ACCOUNT, MY_DISHES = range(3)
 
 BUTTON_MY_DISHES = "Мои блюда"
 BUTTON_CHOICE_DISH = "Выбрать блюдо"
@@ -53,8 +53,9 @@ class Command(BaseCommand):
                 )
             ],
             states={
-                USER_LK:
+                ACCOUNT:
                 [
+                    CommandHandler("account", callback=account_handler),
                     CallbackQueryHandler(
                         callback=dishes_pages_callback,
                         pattern="^dishes"
@@ -67,7 +68,6 @@ class Command(BaseCommand):
             },
             fallbacks=[CommandHandler('cancel', cancel)]
         )
-
         dp.add_handler(conv_handler)
         updater.start_polling()
 
@@ -83,6 +83,21 @@ def autorization_handler(update, context):
         reply_markup=reply_markup
     )
 
+
+def account_handler(update, context):
+    user_id = update.message.from_user.id
+    chat_id = update.effective_chat.id
+    reply_markup = get_user_keyboard()
+    message = "Ваш личный кабинет"
+    context.bot.send_photo(
+        chat_id=chat_id,
+        photo="https://foodplan.ru/lp/img/phone-top-banner.jpeg"
+    )
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=message,
+        reply_markup=reply_markup
+    )
 
 def callback_approve_handler(update, context):
     chat_id = update.effective_chat.id
@@ -111,7 +126,7 @@ def callback_approve_handler(update, context):
             text=message,
             reply_markup=reply_markup
         )
-        return USER_LK
+        return ACCOUNT 
 
 
 def callback_dishes_handler(update, context):
