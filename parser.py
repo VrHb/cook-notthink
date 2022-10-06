@@ -9,7 +9,7 @@ collections.Callable = collections.abc.Callable
 
 
 def parse_recipe(url, pages, dish_type):
-	recipes_per_page = 30
+	recipes_list = []
 	recipes ={
 				  "dishtype": dish_type,	
 				  "title": "",
@@ -40,8 +40,9 @@ def parse_recipe(url, pages, dish_type):
 			recipes["ingredients"] = ingredients[element]
 			recipes["imgs_url"] = imgs_url[element]
 			recipes["calories"] = calories[element]
+			recipes_list.append(recipes)
 		with open('recipes.json', 'w') as fp:
-			json.dump(recipes, fp)
+			json.dump(recipes_list, fp)
 
 
 def main():
