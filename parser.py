@@ -1,6 +1,7 @@
 import requests
 import collections
 import json
+from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 collections.Callable = collections.abc.Callable
@@ -20,7 +21,8 @@ def parse_recipe(url, pages, dish_type):
 		ingredients_soup = soup.find_all("div", class_="ingredients")
 		ingredients = [(ingredient.text).replace("\n", " ") for ingredient in ingredients_soup]
 		imgs_url_soup = soup.find_all("img", {"itemprop": "image"})
-		imgs_url = [img["src"].replace("//", "") for img in imgs_url_soup]
+		base_url = "http://img.iamcook.ru/"
+		imgs_url = [urljoin(base_url, img["src"]) for img in imgs_url_soup]
 		calories_soup = soup.find_all("div", class_="energy tt")
 		calories = [amount.text for amount in calories_soup]
 		for element in range(len(titles)-1):
