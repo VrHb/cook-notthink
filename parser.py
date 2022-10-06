@@ -25,7 +25,6 @@ def parse_recipe(url, pages, dish_type):
 		imgs_url = [img["src"].replace("//", "") for img in imgs_url_soup]
 		calories_soup = soup.find_all("div", class_="energy tt")
 		calories = [amount.text for amount in calories_soup]
-		print(calories)
 		for element in range(len(titles)-1):
 			recipes ={
 				  "dishtype": dish_type,	
