@@ -22,3 +22,12 @@ class DishType(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class User(models.Model):
+    user_id = models.IntegerField(verbose_name='Telegram ID юзера')
+    full_name = models.CharField(verbose_name='Полное имя', max_length=50)
+    phonenumber = models.CharField(verbose_name='Номер телефона', max_length=30)
+
+    def __str__(self):
+        return self.full_name
