@@ -1,9 +1,7 @@
 import requests
 import collections
-import pprint
 import json
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 from pathvalidate import sanitize_filename
 collections.Callable = collections.abc.Callable
 
