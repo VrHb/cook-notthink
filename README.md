@@ -40,12 +40,25 @@ touch .env
 
 ### 5. Переходим в директорию проекта и выполняем миграции в ДБ: 
 ```
-python manage.py makemigrations db; python manage.py migrate
+python3 manage.py makemigrations db; python manage.py migrate
 ```
 #### Важно: 
 Выполнять этот шаг нужно при изменении models.py
 
-### 6. Запускаем модуль бота:
+### 6. Работа с парсером:
+В данной программе имеется 2 парсера.
+`parser.py` - создаст в папке `json` файл с рецептами с сайта `https://www.iamcook.ru/`
+Для вызова этого скрипта необходима команда:
+```
+python3 parser.py
+```
+
+Следующая команда добавит рецепты в базу данного проекта:
+```
+python3 manage.py parser_to_db
+```
+
+### 7. Запускаем модуль бота:
 Сам модуль находится в директории foodplan/management/commands
 ```
 python manage.py bot
