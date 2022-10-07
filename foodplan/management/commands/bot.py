@@ -11,8 +11,12 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
 
 from telegram_bot_pagination import InlineKeyboardPaginator
 
+from loguru import logger
+
 from foodplan.data_operations import get_dishes_from_json
 
+
+logger.debug("console log")
 
 AUTORIZATION, DISHES, ACCOUNT, MY_DISHES = range(4)
 
@@ -61,14 +65,15 @@ class Command(BaseCommand):
                     ),
                     CallbackQueryHandler(
                         callback=callback_account_handler,
-                        pass_chat_data=True
+                        pass_chat_data=True,
                     )
                 ]
             },
-            fallbacks=[CommandHandler('cancel', cancel)]
+            fallbacks=[CommandHandler('cancel', cancel)],
         )
         dp.add_handler(conv_handler)
         updater.start_polling()
+        logger.info(updater.start_polling())
 
 all_dishes = get_dishes_from_json()
 dishes = all_dishes[:100]
@@ -111,7 +116,7 @@ def callback_approve_handler(update, context):
     user_id = update.effective_user.id
     query = update.callback_query
     data = query.data
-    print(user_id)
+    logger.info(user_id)
     if data == BUTTON_APPROVE: 
         user_in["telegram_id"] = user_id
         print(user_in)
@@ -128,7 +133,6 @@ def callback_approve_handler(update, context):
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
-        print(data)
         return DISHES 
 
 
@@ -138,7 +142,7 @@ def callback_account_handler(update, context):
     data = query.data
     if data == BUTTON_MY_DISHES:
         paginator = InlineKeyboardPaginator(
-            len(added_dishes),
+            len(choised_dishes),
             data_pattern="dishes#{page}"
         )
         paginator.add_after(
@@ -146,7 +150,7 @@ def callback_account_handler(update, context):
         )
         context.bot.send_message(
             chat_id=chat_id,
-            text=f"*{dishes[0]['title']}*\n{dishes[0]['description']}\n{dishes[0]['imgs_url']}",
+            text=f"*{choised_dishes[0]['title']}*\n{choised_dishes[0]['description']}\n{choised_dishes[0]['imgs_url']}",
             reply_markup=paginator.markup,
             parse_mode="Markdown"
         )
@@ -163,44 +167,40 @@ def callback_account_handler(update, context):
             reply_markup=reply_markup
         )
     if data == BUTTON_CHOICE_DISH:
-        print(data)
+        dish = random.choice(dishes) 
         context.bot.send_message(
             chat_id=chat_id,
-            text=f"*{dishes[0]['title']}*\n{dishes[0]['description']}\n{dishes[0]['imgs_url']}",
+            text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
         return DISHES
 
+@logger.catch
 def dish_pages_callback(update, context):
+    dish = random.choice(dishes)
     query = update.callback_query
     chat_id = update.effective_chat.id
     data = query.data
-    dish = random.choice(dishes) 
+    message = f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}"
+    logger.info(dish["title"])
+    if data == BUTTON_LIKE:
+        choised_dishes.append(dish)
     if data == BUTTON_NO:
         context.bot.send_message(
             chat_id=chat_id,
-            text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
+            text=message,
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
-    if data == BUTTON_LIKE:
-        choised_dishes.append(dish)
-        context.bot.send_message(
-            chat_id=chat_id,
-            text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
-            reply_markup=get_disheschoise_keyboard(),
-            parse_mode="Markdown"
-        )
-    print(choised_dishes)
-
+    return DISHES
 
 def dishes_account_callback(update, context):
     query = update.callback_query
     query.answer()
     page = int(query.data.split('#')[1])
     paginator = InlineKeyboardPaginator(
-        len(added_dishes),
+        len(choised_dishes),
         current_page=page,
         data_pattern='dishes#{page}'
     )
@@ -208,7 +208,7 @@ def dishes_account_callback(update, context):
         InlineKeyboardButton('Назад', callback_data=BUTTON_BACK)
     )
     query.edit_message_text(
-        text=f"*{dishes[page - 1]['title']}*\n{dishes[page -1]['description']}\n{dishes[page -1]['imgs_url']}",
+        text=f"*{choised_dishes[page - 1]['title']}*\n{choised_dishes[page -1]['description']}\n{choised_dishes[page -1]['imgs_url']}",
         reply_markup=paginator.markup,
         parse_mode="Markdown"
     )
