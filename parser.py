@@ -41,13 +41,7 @@ def parse_recipe(url, pages, dish_type):
 			recipes["imgs_url"] = imgs_url[element]
 			recipes["calories"] = calories[element]
 			recipes_list.append(recipes)
-	with open('recipes.json', 'a+') as fp:
-		json.dump(
-            recipes_list,
-            fp,
-			ensure_ascii=False,
-            indent=4
-        )
+	return recipes_list
 
 
 def main():
@@ -55,9 +49,17 @@ def main():
 	vegetaian_url = "https://www.iamcook.ru/event/everyday/everyday-vegetarian"
 	nonglyuten_url = 'https://www.iamcook.ru/event/baking/gluten-free-baking'
 	meat_url = "https://www.iamcook.ru/showsubsection/myasnie_bluda"
-	parse_recipe(vegetaian_url, pages, dish_type="Вегетарианская")
-	parse_recipe(nonglyuten_url, pages, dish_type="Безглютеновая")
-	parse_recipe(meat_url, pages, dish_type="Мясные блюда")
+	veg_list = parse_recipe(vegetaian_url, pages, dish_type="Вегетарианская")
+	nonglyuten_list = parse_recipe(nonglyuten_url, pages, dish_type="Безглютеновая")
+	meat_list = parse_recipe(meat_url, pages, dish_type="Мясные блюда")
+	recipes_list = veg_list + nonglyuten_list + meat_list
+	with open('recipes.json', 'a') as fp:
+		json.dump(
+            recipes_list,
+            fp,
+			ensure_ascii=False,
+            indent=4
+        )
 
 
 if __name__ == "__main__":
