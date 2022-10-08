@@ -29,7 +29,7 @@ def parse_recipe(url, pages, dish_type):
 			recipes ={
 				  "title": "",
 				  "description": "",
-				  "image": "",
+				  "imgs_url": "",
 				  "calories": "",
 				  "dishtype": dish_type,	
 				  "ingridients": "",
@@ -38,7 +38,7 @@ def parse_recipe(url, pages, dish_type):
 			recipes["title"] = titles[element]
 			recipes["description"] = descriptions[element]
 			recipes["ingridients"] = ingredients[element]
-			recipes["image"] = imgs_url[element]
+			recipes["imgs_url"] = imgs_url[element]
 			recipes["calories"] = calories[element]
 			recipes_list.append(recipes)
 	with open('recipes.json', 'a+') as fp:
