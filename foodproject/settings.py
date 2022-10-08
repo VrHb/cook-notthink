@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'foodplan.apps.FoodplanConfig',
-    'foodplan',
+    'import-export',
 ]
 
 MIDDLEWARE = [
