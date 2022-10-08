@@ -37,7 +37,7 @@ def parse_recipe(url, pages, dish_type):
 			recipes["dishtype"] = dish_type
 			recipes["title"] = titles[element]
 			recipes["description"] = descriptions[element]
-			recipes["ingredients"] = ingredients[element]
+			recipes["ingridients"] = ingredients[element]
 			recipes["image"] = imgs_url[element]
 			recipes["calories"] = calories[element]
 			recipes_list.append(recipes)
