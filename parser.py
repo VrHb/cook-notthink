@@ -27,12 +27,12 @@ def parse_recipe(url, pages, dish_type):
 		calories = [amount.text for amount in calories_soup]
 		for element in range(len(titles)-1):
 			recipes ={
-				  "title": "",
-				  "description": "",
-				  "imgs_url": "",
-				  "calories": "",
-				  "dishtype": dish_type,	
-				  "ingredients": "",
+						"dishtype": dish_type,	
+						"title": "",
+						"description": "",
+						"ingredients": "",
+						"imgs_url": "",
+						"calories": "",
 			}
 			recipes["dishtype"] = dish_type
 			recipes["title"] = titles[element]
