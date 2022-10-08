@@ -27,8 +27,9 @@ BUTTON_APPROVE = "Согласен"
 BUTTON_REJECT = "Отказываюсь"
 BUTTON_ACCOUNT = "Личный кабинет"
 BUTTON_LIKE = "Хочу попробовать"
-BUTTON_NO = "Не интересно"
-
+BUTTON_NO = "Другое блюдо"
+BUTTON_IGNORE = "Больше не показывать"
+BUTTON_END = "Выход"
 
 
 class Command(BaseCommand):
@@ -44,7 +45,7 @@ class Command(BaseCommand):
                 CallbackQueryHandler(
                     callback=callback_approve_handler,
                     pass_chat_data=True
-                )
+                ),
             ],
             states={
                 DISHES:
@@ -73,7 +74,7 @@ class Command(BaseCommand):
         )
         dp.add_handler(conv_handler)
         updater.start_polling()
-        logger.info(updater.start_polling())
+
 
 all_dishes = get_dishes_from_json()
 dishes = all_dishes[:100]
@@ -98,18 +99,14 @@ def account_handler(update, context):
     user_id = update.message.from_user.id
     chat_id = update.effective_chat.id
     reply_markup = get_user_keyboard()
-    message = "Ваш личный кабинет"
-    context.bot.send_photo(
-        chat_id=chat_id,
-        photo="https://foodplan.ru/lp/img/phone-top-banner.jpeg"
-    )
+    message = "https://foodplan.ru/lp/img/phone-top-banner.jpeg\n*Ваш личный кабинет*"
     context.bot.send_message(
         chat_id=chat_id,
         text=message,
-        reply_markup=reply_markup
+        reply_markup=reply_markup,
+        parse_mode="Markdown"
     )
     return ACCOUNT
-
 
 def callback_approve_handler(update, context):
     chat_id = update.effective_chat.id
@@ -127,9 +124,10 @@ def callback_approve_handler(update, context):
             text="Без соглашения на обработку мы не можем оказать вам услугу"
         )
     if user_in["telegram_id"]:
+        dish = random.choice(dishes)
         context.bot.send_message(
             chat_id=chat_id,
-            text=f"*{dishes[0]['title']}*\n{dishes[0]['description']}\n{dishes[0]['imgs_url']}",
+            text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
@@ -156,15 +154,12 @@ def callback_account_handler(update, context):
         )
     if data == BUTTON_BACK:
         reply_markup = get_user_keyboard()
-        message = "Ваш личный кабинет"
-        context.bot.send_photo(
-            chat_id=chat_id,
-            photo="https://foodplan.ru/lp/img/phone-top-banner.jpeg"
-        )
+        message = "https://foodplan.ru/lp/img/phone-top-banner.jpeg\n*Ваш личный кабинет*"
         context.bot.send_message(
             chat_id=chat_id,
             text=message,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
         )
     if data == BUTTON_CHOICE_DISH:
         dish = random.choice(dishes) 
@@ -180,20 +175,35 @@ def callback_account_handler(update, context):
 def dish_pages_callback(update, context):
     dish = random.choice(dishes)
     query = update.callback_query
+    data = query.data
     chat_id = update.effective_chat.id
     data = query.data
-    message = f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}"
-    logger.info(dish["title"])
     if data == BUTTON_LIKE:
         choised_dishes.append(dish)
-    if data == BUTTON_NO:
+    message = f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}"
+    logger.info(dish["title"])
+    context.bot.send_message(
+        chat_id=chat_id,
+        reply_markup=get_disheschoise_keyboard(),
+        text=message,
+        parse_mode="Markdown"
+    )
+    if data == BUTTON_IGNORE:
         context.bot.send_message(
             chat_id=chat_id,
-            text=message,
-            reply_markup=get_disheschoise_keyboard(),
+            text="ОК, это блюдо больше не рекомдуем",
             parse_mode="Markdown"
         )
-    return DISHES
+    if data == BUTTON_END:
+        context.bot.delete_message(
+            chat_id=chat_id,
+            message_id=message.message_id
+            )
+        return cancel 
+    logger.info(context.user_data)
+    logger.info(data)
+    logger.info(choised_dishes)
+
 
 def dishes_account_callback(update, context):
     query = update.callback_query
@@ -241,7 +251,9 @@ def get_autorization_keyboard():
 def get_disheschoise_keyboard():
     keyboard=[
         [InlineKeyboardButton("Хочу попробовать", callback_data=BUTTON_LIKE)],
-        [InlineKeyboardButton("Не интересно", callback_data=BUTTON_NO)],
+        [InlineKeyboardButton("Другое блюдо", callback_data=BUTTON_NO)],
+        [InlineKeyboardButton("Больше не показывать", callback_data=BUTTON_IGNORE)],
+        [InlineKeyboardButton("Выход", callback_data=BUTTON_END)],
     ]
     return InlineKeyboardMarkup(keyboard)
 
