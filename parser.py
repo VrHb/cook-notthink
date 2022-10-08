@@ -27,25 +27,25 @@ def parse_recipe(url, pages, dish_type):
 		calories = [amount.text for amount in calories_soup]
 		for element in range(len(titles)-1):
 			recipes ={
-				  "dishtype": dish_type,	
 				  "title": "",
 				  "description": "",
-				  "ingredients": "",
-				  "imgs_url": "",
+				  "image": "",
 				  "calories": "",
+				  "dishtype": dish_type,	
+				  "ingridients": "",
 			}
 			recipes["dishtype"] = dish_type
 			recipes["title"] = titles[element]
 			recipes["description"] = descriptions[element]
 			recipes["ingredients"] = ingredients[element]
-			recipes["imgs_url"] = imgs_url[element]
+			recipes["image"] = imgs_url[element]
 			recipes["calories"] = calories[element]
 			recipes_list.append(recipes)
 	with open('recipes.json', 'a+') as fp:
 		json.dump(
             recipes_list,
-            fp, 
-            ensure_ascii=False,
+            fp,
+			ensure_ascii=False,
             indent=4
         )
 
