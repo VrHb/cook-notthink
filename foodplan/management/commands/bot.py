@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from django.core.management.base import BaseCommand
 
 from telegram import InlineKeyboardButton, ReplyKeyboardMarkup, \
-    InlineKeyboardMarkup
+    InlineKeyboardMarkup, KeyboardButton
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
     CallbackQueryHandler, ConversationHandler
 
@@ -13,7 +13,7 @@ from telegram_bot_pagination import InlineKeyboardPaginator
 
 from loguru import logger
 
-from foodplan.data_operations import get_dishes_from_json
+from foodplan.data_operations import get_dishes_from_json, is_new_user, save_user_data, validate_fullname, validate_phonenumber
 
 
 logger.debug("console log")
@@ -44,10 +44,19 @@ class Command(BaseCommand):
                 CommandHandler("start", autorization_handler),
                 CallbackQueryHandler(
                     callback=callback_approve_handler,
-                    pass_chat_data=True
-                ),
+                    pass_chat_data=True,
+                )
             ],
             states={
+                AUTORIZATION:
+                [
+                CallbackQueryHandler(
+                    callback=callback_approve_handler,
+                    pass_chat_data=True
+                ),
+                MessageHandler(Filters.text, get_phone),
+                MessageHandler(Filters.contact, get_dish),
+                ],
                 DISHES:
                 [
                     CommandHandler("account", callback=account_handler),
@@ -81,6 +90,7 @@ dishes = all_dishes[:100]
 added_dishes = dishes[20:30]
 user_in = {}
 choised_dishes = []
+get_name = False 
 
 
 def autorization_handler(update, context):
@@ -93,6 +103,7 @@ def autorization_handler(update, context):
         text=message,
         reply_markup=reply_markup
     )
+    return AUTORIZATION
 
 
 def account_handler(update, context):
@@ -108,30 +119,61 @@ def account_handler(update, context):
     )
     return ACCOUNT
 
+
 def callback_approve_handler(update, context):
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     query = update.callback_query
     data = query.data
     logger.info(user_id)
-    if data == BUTTON_APPROVE: 
+    if data == BUTTON_APPROVE:
         user_in["telegram_id"] = user_id
+        context.bot.send_message(
+            chat_id=chat_id,
+            text="Введите имя и фамилию"
+        )
+        get_name = True
         print(user_in)
+        return AUTORIZATION
     if data == BUTTON_REJECT:
         user_in["telegram_id"] = ""
         context.bot.send_message(
             chat_id=chat_id,
             text="Без соглашения на обработку мы не можем оказать вам услугу"
         )
+        return conversation.END
     if user_in["telegram_id"]:
         dish = random.choice(dishes)
         context.bot.send_message(
-            chat_id=chat_id,
+                chat_id=chat_id,
             text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
         return DISHES 
+
+
+def get_dish(update, context):
+    user_data = context.user_data
+    logger.info(user_data)
+    user_id = update.message.from_user.id
+    chat_id = update.effective_chat.id
+    dish = random.choice(dishes)
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
+        reply_markup=get_disheschoise_keyboard(),
+        parse_mode="Markdown"
+    )
+    return DISHES 
+
+
+def get_phone(update, context):
+    user_id = update.message.from_user.id
+    chat_id = update.effective_chat.id
+    message_keyboard = [[KeyboardButton("Отправить свой номер телефона", request_contact=True)]]
+    markup = ReplyKeyboardMarkup(message_keyboard, one_time_keyboard=True, resize_keyboard=True)
+    update.message.reply_text(f"Введите телефон в формате +7... или нажав на кнопку ниже:", reply_markup=markup)
 
 
 def callback_account_handler(update, context):
