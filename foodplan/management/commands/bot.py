@@ -4,6 +4,7 @@ import random
 from dotenv import load_dotenv
 from django.core.management.base import BaseCommand
 
+import phonenumbers
 from telegram import InlineKeyboardButton, ReplyKeyboardMarkup, \
     InlineKeyboardMarkup, KeyboardButton
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, \
@@ -13,7 +14,8 @@ from telegram_bot_pagination import InlineKeyboardPaginator
 
 from loguru import logger
 
-from foodplan.data_operations import get_dishes_from_json, is_new_user, save_user_data, validate_fullname, validate_phonenumber
+from foodplan.data_operations import get_dishes_from_json, is_new_user, \
+    save_user_data, validate_fullname, validate_phonenumber, delete_user
 
 
 logger.debug("console log")
@@ -89,21 +91,34 @@ all_dishes = get_dishes_from_json()
 dishes = all_dishes[:100]
 added_dishes = dishes[20:30]
 user_in = {}
+user_info = {}
 choised_dishes = []
-get_name = False 
 
 
 def autorization_handler(update, context):
-    user_id = update.message.from_user.id
+    user_id = update.effective_user.id
     chat_id = update.effective_chat.id
-    reply_markup = get_autorization_keyboard()
-    message = "Соглашение на обработку пд"
-    context.bot.send_message(
-        chat_id=chat_id,
-        text=message,
-        reply_markup=reply_markup
-    )
-    return AUTORIZATION
+    if is_new_user(user_id):
+        with open("pd_approve.pdf", "rb") as image:
+            agrement = image.read()
+        reply_markup = get_autorization_keyboard()
+        update.message.reply_document(
+            agrement,
+            filename="Соглашение на обработку персональных данных.pdf",
+            caption="Для использования сервиса, примите соглашение об обработке персональных данных",
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
+        )
+        return AUTORIZATION
+    else:
+        dish = random.choice(dishes)
+        context.bot.send_message(
+                chat_id=chat_id,
+            text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
+            reply_markup=get_disheschoise_keyboard(),
+            parse_mode="Markdown"
+        )
+        return DISHES
 
 
 def account_handler(update, context):
@@ -132,60 +147,69 @@ def callback_approve_handler(update, context):
             chat_id=chat_id,
             text="Введите имя и фамилию"
         )
-        get_name = True
-        print(user_in)
         return AUTORIZATION
     if data == BUTTON_REJECT:
-        user_in["telegram_id"] = ""
         context.bot.send_message(
             chat_id=chat_id,
             text="Без соглашения на обработку мы не можем оказать вам услугу"
         )
-        return conversation.END
-    if user_in["telegram_id"]:
+        delete_user(user_id)  # delete user if rejected
+    
+
+def get_dish(update, context):
+    if update.message.contact:
+        phone = update.message.contact.phone_number
+    else:
+        phone = update.message.text
+    check_number = validate_phonenumber(phone)
+    if check_number:
+        user_info["phone_number"] = phonenumbers.parse(phone, "RU")
+        logger.info(user_info)
+        logger.info(is_new_user(user_info["user_id"]))
+        if is_new_user(user_info["user_id"]):
+            save_user_data(user_info)
+        chat_id = update.effective_chat.id
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=f"*Вы прошли регистрацию*\nНиже выберите блюда на свой вкус",
+            parse_mode="Markdown"
+        )
         dish = random.choice(dishes)
         context.bot.send_message(
-                chat_id=chat_id,
+            chat_id=chat_id,
             text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
         return DISHES 
-
-
-def get_dish(update, context):
-    user_data = context.user_data
-    logger.info(user_data)
-    user_id = update.message.from_user.id
-    chat_id = update.effective_chat.id
-    dish = random.choice(dishes)
-    context.bot.send_message(
-        chat_id=chat_id,
-        text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
-        reply_markup=get_disheschoise_keyboard(),
-        parse_mode="Markdown"
-    )
-    return DISHES 
-
-
-def get_fullname(update, context):
-    context.user_data["choice"] = "Имя и фамилия"
-    update.message.reply_text(f"Введите имя и фамилию:")
+    else:
+        update.message.reply_text(
+            "Введите правильный номер!"
+        )
 
 
 def get_phone(update, context):
-    value = update.message.text
-    fullname = value.split()
-    if not validate_fullname(fullname):
+    user = update.message.text
+    user_info["user_id"] = update.message.from_user.id
+    user_info["full_name"] = user
+    split_name = user.split()
+    if not validate_fullname(split_name):
         update.message.reply_text(f"Введите корректные имя и фамилию:")
-    logger.info(value)
-    #  get name and lastname
-    if validate_fullname(fullname):
-        user_id = update.message.from_user.id
-        chat_id = update.effective_chat.id
-        message_keyboard = [[KeyboardButton("Отправить свой номер телефона", request_contact=True)]]
-        markup = ReplyKeyboardMarkup(message_keyboard, one_time_keyboard=True, resize_keyboard=True)
-        update.message.reply_text(f"Введите телефон в формате +7... или нажав на кнопку ниже:", reply_markup=markup)
+    if validate_fullname(split_name):
+        message_keyboard = [
+            [
+                KeyboardButton(
+                    "Отправить свой номер телефона", request_contact=True
+                )
+            ]
+        ]
+        markup = ReplyKeyboardMarkup(
+            message_keyboard, one_time_keyboard=True, resize_keyboard=True
+        )
+        update.message.reply_text(
+            f"Введите телефон в формате +7... или нажав на кнопку ниже:", 
+            reply_markup=markup
+        )
 
 
 def callback_account_handler(update, context):
@@ -225,6 +249,7 @@ def callback_account_handler(update, context):
         )
         return DISHES
 
+
 @logger.catch
 def dish_pages_callback(update, context):
     dish = random.choice(dishes)
@@ -243,19 +268,23 @@ def dish_pages_callback(update, context):
         parse_mode="Markdown"
     )
     if data == BUTTON_IGNORE:
+        # Need add logic for delete dish from list
         context.bot.send_message(
             chat_id=chat_id,
-            text="ОК, это блюдо больше не рекомдуем",
+            text="Это блюдо больше не покажем",
             parse_mode="Markdown"
         )
-    if data == BUTTON_END:
-        context.bot.delete_message(
+    if data == BUTTON_ACCOUNT:
+        reply_markup = get_user_keyboard()
+        message = "https://foodplan.ru/lp/img/phone-top-banner.jpeg\n*Ваш личный кабинет*"
+        context.bot.send_message(
             chat_id=chat_id,
-            message_id=message.message_id
-            )
-        return cancel 
-    logger.info(context.user_data)
-    logger.info(data)
+            text=message,
+            reply_markup=reply_markup,
+            parse_mode="Markdown"
+        )
+        return ACCOUNT
+
     logger.info(choised_dishes)
 
 
@@ -279,9 +308,10 @@ def dishes_account_callback(update, context):
 
 
 def cancel(update, context):
-    user = update.message.from_user
-    update.message.reply_text(
-        "вы вышли"
+    chat_id = update.effective_chat.id
+    context.bot.delete_message(
+        chat_id=chat_id,
+        message_id=update.message.message_id
     )
     return ConversationHandler.END
 
@@ -307,7 +337,7 @@ def get_disheschoise_keyboard():
         [InlineKeyboardButton("Хочу попробовать", callback_data=BUTTON_LIKE)],
         [InlineKeyboardButton("Другое блюдо", callback_data=BUTTON_NO)],
         [InlineKeyboardButton("Больше не показывать", callback_data=BUTTON_IGNORE)],
-        [InlineKeyboardButton("Выход", callback_data=BUTTON_END)],
+        [InlineKeyboardButton("Личный кабинет", callback_data=BUTTON_ACCOUNT)],
     ]
     return InlineKeyboardMarkup(keyboard)
 
