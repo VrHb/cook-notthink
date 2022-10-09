@@ -22,7 +22,7 @@ def get_dishes_from_json() -> list[dict]:
 
 
 def is_new_user(user_id):
-    return not User.objects.filter(user_id=user_id).exists()
+     return not User.objects.filter(user_id=user_id).exists()
 
 
 def save_user_data(data):
@@ -30,7 +30,7 @@ def save_user_data(data):
     User.objects.create(user_id=data["user_id"], full_name=data["full_name"], phonenumber=phone)
 
 
-def validate_fullname(fullname: list) -> bool:
+def validate_fullname(fullname: list) -> bool | None:
     if len(fullname) > 1:
         return True 
 
@@ -41,3 +41,9 @@ def validate_phonenumber(number):
         return phonenumbers.is_valid_number_for_region(parsed_number, 'RU')
     except phonenumbers.phonenumberutil.NumberParseException:
         return False
+
+
+def delete_user(user_id):
+    User.objects.filter(user_id__contains=user_id).delete()
+
+
