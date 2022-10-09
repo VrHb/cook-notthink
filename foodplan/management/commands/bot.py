@@ -168,12 +168,24 @@ def get_dish(update, context):
     return DISHES 
 
 
+def get_fullname(update, context):
+    context.user_data["choice"] = "Имя и фамилия"
+    update.message.reply_text(f"Введите имя и фамилию:")
+
+
 def get_phone(update, context):
-    user_id = update.message.from_user.id
-    chat_id = update.effective_chat.id
-    message_keyboard = [[KeyboardButton("Отправить свой номер телефона", request_contact=True)]]
-    markup = ReplyKeyboardMarkup(message_keyboard, one_time_keyboard=True, resize_keyboard=True)
-    update.message.reply_text(f"Введите телефон в формате +7... или нажав на кнопку ниже:", reply_markup=markup)
+    value = update.message.text
+    fullname = value.split()
+    if not validate_fullname(fullname):
+        update.message.reply_text(f"Введите корректные имя и фамилию:")
+    logger.info(value)
+    #  get name and lastname
+    if validate_fullname(fullname):
+        user_id = update.message.from_user.id
+        chat_id = update.effective_chat.id
+        message_keyboard = [[KeyboardButton("Отправить свой номер телефона", request_contact=True)]]
+        markup = ReplyKeyboardMarkup(message_keyboard, one_time_keyboard=True, resize_keyboard=True)
+        update.message.reply_text(f"Введите телефон в формате +7... или нажав на кнопку ниже:", reply_markup=markup)
 
 
 def callback_account_handler(update, context):

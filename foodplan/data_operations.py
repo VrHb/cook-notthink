@@ -31,9 +31,8 @@ def save_user_data(data):
 
 
 def validate_fullname(fullname: list) -> bool:
-    if len(fullname) < 2:
-        return False
-    return True
+    if len(fullname) > 1:
+        return True 
 
 
 def validate_phonenumber(number):
