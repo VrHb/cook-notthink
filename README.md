@@ -40,7 +40,7 @@ touch .env
 
 ### 5. Переходим в директорию проекта и выполняем миграции в ДБ: 
 ```
-python3 manage.py makemigrations db; python manage.py migrate
+python manage.py makemigrations foodplan; python manage.py migrate foodplan
 ```
 #### Важно: 
 Выполнять этот шаг нужно при изменении models.py
