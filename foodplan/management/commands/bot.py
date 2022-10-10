@@ -100,6 +100,7 @@ choised_dishes = []
 
 
 def autorization_handler(update, context):
+    dish = random.choice(dishes)
     user_id = update.effective_user.id
     chat_id = update.effective_chat.id
     if is_new_user(user_id):
@@ -115,13 +116,15 @@ def autorization_handler(update, context):
         )
         return AUTORIZATION
     else:
-        dish = random.choice(dishes)
         context.bot.send_message(
-                chat_id=chat_id,
+            chat_id=chat_id,
             text=f"*{dish.title}*\n{dish.description}\n{dish.image}",
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
+        text = update.message.text
+        logger.info(text)
+
         return DISHES
 
 
@@ -226,8 +229,8 @@ def get_phone(update, context):
     split_name = user.split()
     if not validate_fullname(split_name):
         update.message.reply_text(
-                "*Введите корректные имя и фамилию!*\nПример: Василий Петров",
-                parse_mode="Markdown"
+            "*Введите корректные имя и фамилию!*\nПример: Василий Петров",
+            parse_mode="Markdown"
         )
     if validate_fullname(split_name):
         message_keyboard = [
