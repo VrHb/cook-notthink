@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# Project
+data.py
+*.json
+test_pagination.py
+
 # Distribution / packaging
 .Python
 build/
