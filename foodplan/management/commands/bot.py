@@ -184,7 +184,8 @@ def get_dish(update, context):
         return DISHES 
     else:
         update.message.reply_text(
-            "Введите правильный номер!"
+            "*Введите правильный номер!*\nПример: +79214563321",
+            parse_mode="Markdown"
         )
 
 
@@ -213,7 +214,8 @@ def get_phone_from_text(update, context):
         return DISHES 
     else:
         update.message.reply_text(
-            "Введите правильный номер!"
+            "*Введите правильный номер!*\nПример: +79214563321",
+            parse_mode="Markdown"
         )
 
 
@@ -223,7 +225,10 @@ def get_phone(update, context):
     user_info["full_name"] = user
     split_name = user.split()
     if not validate_fullname(split_name):
-        update.message.reply_text(f"Введите корректные имя и фамилию:")
+        update.message.reply_text(
+                "*Введите корректные имя и фамилию!*\nПример: Василий Петров",
+                parse_mode="Markdown"
+        )
     if validate_fullname(split_name):
         message_keyboard = [
             [
@@ -282,7 +287,7 @@ def callback_account_handler(update, context):
 
 @logger.catch
 def dish_pages_callback(update, context):
-    dish = dishes
+    dish = random.choice(dishes)
     query = update.callback_query
     data = query.data
     chat_id = update.effective_chat.id
