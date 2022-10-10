@@ -21,7 +21,7 @@ from foodplan.data_operations import get_dishes_from_json, is_new_user, \
 
 logger.debug("console log")
 
-AUTORIZATION, DISHES, ACCOUNT, MY_DISHES = range(4)
+AUTORIZATION, GET_PHONE, DISHES, ACCOUNT, MY_DISHES = range(5)
 
 BUTTON_MY_DISHES = "Мои блюда"
 BUTTON_CHOICE_DISH = "Выбрать блюдо"
@@ -58,6 +58,10 @@ class Command(BaseCommand):
                     pass_chat_data=True
                 ),
                 MessageHandler(Filters.text, get_phone),
+                ],
+                GET_PHONE:
+                [
+                MessageHandler(Filters.text, get_phone_from_text),
                 MessageHandler(Filters.contact, get_dish),
                 ],
                 DISHES:
@@ -152,14 +156,40 @@ def callback_approve_handler(update, context):
             chat_id=chat_id,
             text="Без соглашения на обработку мы не можем оказать вам услугу"
         )
-        delete_user(user_id)  # delete user if rejected
+        # delete_user(user_id)  
     
 
 def get_dish(update, context):
-    if update.message.contact:
-        phone = update.message.contact.phone_number
+    phone = update.message.contact.phone_number
+    check_number = validate_phonenumber(phone)
+    if check_number:
+        user_info["phone_number"] = phonenumbers.parse(phone, "RU")
+        logger.info(user_info)
+        logger.info(is_new_user(user_info["user_id"]))
+        if is_new_user(user_info["user_id"]):
+            save_user_data(user_info)
+        chat_id = update.effective_chat.id
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=f"*Вы прошли регистрацию*\nНиже выберите блюда на свой вкус",
+            parse_mode="Markdown"
+        )
+        dish = random.choice(dishes)
+        context.bot.send_message(
+            chat_id=chat_id,
+            text=f"*{dish.title}*\n{dish.description}\n{dish.image}",
+            reply_markup=get_disheschoise_keyboard(),
+            parse_mode="Markdown"
+        )
+        return DISHES 
     else:
-        phone = update.message.text
+        update.message.reply_text(
+            "Введите правильный номер!"
+        )
+
+
+def get_phone_from_text(update, context):
+    phone = update.message.text
     check_number = validate_phonenumber(phone)
     if check_number:
         user_info["phone_number"] = phonenumbers.parse(phone, "RU")
@@ -209,6 +239,7 @@ def get_phone(update, context):
             f"Введите телефон в формате +7... или нажав на кнопку ниже:", 
             reply_markup=markup
         )
+        return GET_PHONE
 
 
 def callback_account_handler(update, context):
@@ -251,7 +282,7 @@ def callback_account_handler(update, context):
 
 @logger.catch
 def dish_pages_callback(update, context):
-    dish = random.choice(dishes)
+    dish = dishes
     query = update.callback_query
     data = query.data
     chat_id = update.effective_chat.id
@@ -282,7 +313,6 @@ def dish_pages_callback(update, context):
             parse_mode="Markdown"
         )
         return ACCOUNT
-
     logger.info(choised_dishes)
 
 
