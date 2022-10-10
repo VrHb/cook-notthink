@@ -1,9 +1,18 @@
 import json
+from typing import NamedTuple
 import phonenumbers
 from django.contrib.auth.models import User
 
-from foodplan.models import User, Dish
+from foodplan.models import User, Dish as DishModel
 
+
+class Dish(NamedTuple):
+    category: str
+    title: str
+    description: str
+    ingridients: str
+    image: str
+    calories: str
 
 
 def get_dishes_from_json() -> list[dict]:
@@ -13,7 +22,7 @@ def get_dishes_from_json() -> list[dict]:
 
 
 def get_dishes_from_db():
-    dishes = Dish.objects.all()
+    dishes = DishModel.objects.all()
     return dishes
 
 
@@ -41,5 +50,3 @@ def validate_phonenumber(number):
 
 def delete_user(user_id):
     User.objects.filter(user_id__contains=user_id).delete()
-
-
