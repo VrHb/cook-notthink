@@ -15,7 +15,8 @@ from telegram_bot_pagination import InlineKeyboardPaginator
 from loguru import logger
 
 from foodplan.data_operations import get_dishes_from_json, is_new_user, \
-    save_user_data, validate_fullname, validate_phonenumber, delete_user
+    save_user_data, validate_fullname, validate_phonenumber, delete_user, \
+    get_dishes_from_db
 
 
 logger.debug("console log")
@@ -87,10 +88,9 @@ class Command(BaseCommand):
         updater.start_polling()
 
 
-all_dishes = get_dishes_from_json()
-dishes = all_dishes[:100]
-added_dishes = dishes[20:30]
-user_in = {}
+# all_dishes = get_dishes_from_json()
+
+dishes = get_dishes_from_db()[:100]
 user_info = {}
 choised_dishes = []
 
@@ -114,7 +114,7 @@ def autorization_handler(update, context):
         dish = random.choice(dishes)
         context.bot.send_message(
                 chat_id=chat_id,
-            text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
+            text=f"*{dish.title}*\n{dish.description}\n{dish.image}",
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
@@ -142,7 +142,6 @@ def callback_approve_handler(update, context):
     data = query.data
     logger.info(user_id)
     if data == BUTTON_APPROVE:
-        user_in["telegram_id"] = user_id
         context.bot.send_message(
             chat_id=chat_id,
             text="Введите имя и фамилию"
@@ -177,7 +176,7 @@ def get_dish(update, context):
         dish = random.choice(dishes)
         context.bot.send_message(
             chat_id=chat_id,
-            text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
+            text=f"*{dish.title}*\n{dish.description}\n{dish.image}",
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
@@ -226,7 +225,7 @@ def callback_account_handler(update, context):
         )
         context.bot.send_message(
             chat_id=chat_id,
-            text=f"*{choised_dishes[0]['title']}*\n{choised_dishes[0]['description']}\n{choised_dishes[0]['imgs_url']}",
+            text=f"*{choised_dishes[0].title}*\n{choised_dishes[0].description}\n{choised_dishes[0].image}",
             reply_markup=paginator.markup,
             parse_mode="Markdown"
         )
@@ -243,7 +242,7 @@ def callback_account_handler(update, context):
         dish = random.choice(dishes) 
         context.bot.send_message(
             chat_id=chat_id,
-            text=f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}",
+            text=f"*{dish.title}*\n{dish.description}\n{dish.image}",
             reply_markup=get_disheschoise_keyboard(),
             parse_mode="Markdown"
         )
@@ -259,8 +258,7 @@ def dish_pages_callback(update, context):
     data = query.data
     if data == BUTTON_LIKE:
         choised_dishes.append(dish)
-    message = f"*{dish['title']}*\n{dish['description']}\n{dish['imgs_url']}"
-    logger.info(dish["title"])
+    message = f"*{dish.title}*\n{dish.description}\n{dish.image}"
     context.bot.send_message(
         chat_id=chat_id,
         reply_markup=get_disheschoise_keyboard(),
@@ -301,7 +299,7 @@ def dishes_account_callback(update, context):
         InlineKeyboardButton('Назад', callback_data=BUTTON_BACK)
     )
     query.edit_message_text(
-        text=f"*{choised_dishes[page - 1]['title']}*\n{choised_dishes[page -1]['description']}\n{choised_dishes[page -1]['imgs_url']}",
+        text=f"*{choised_dishes[page - 1].title}*\n{choised_dishes[page -1].description}\n{choised_dishes[page -1].image}",
         reply_markup=paginator.markup,
         parse_mode="Markdown"
     )
